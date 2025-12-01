@@ -10,7 +10,7 @@ django.setup()
 from django.conf import settings
 import requests
 
-WEBHOOK_URL = f"{settings.SITE_URL}/telegram/webhook/"  # Your Render URL
+WEBHOOK_URL = f"https://bollyfun.onrender.com/telegram/webhook/"  # Your Render URL
 BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN
 
 def setup_webhook():

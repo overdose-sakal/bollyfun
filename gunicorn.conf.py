@@ -1,11 +1,10 @@
 # gunicorn.conf.py
 
-# A single synchronous worker is fastest for webhook/API environments
+# A single synchronous worker is generally efficient for simple webhook setups.
 workers = 1 
 
-# Bind to the port Render provides
+# Instruct Gunicorn to bind to the address and port provided by Render (0.0.0.0 is all interfaces).
 bind = '0.0.0.0:8000' 
 
-# Set a slightly longer timeout just in case, though 30 is the default.
-# Render's deploy timeout is 60s, this is for request processing.
+# Set a reasonable timeout for handling requests.
 timeout = 30

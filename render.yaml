@@ -3,6 +3,7 @@ services:
     name: bollyfun
     env: python
     buildCommand: "./build.sh"
+    # UPDATED: Use the new configuration file
     startCommand: "gunicorn --config gunicorn.conf.py BF.wsgi:application"
     envVars:
       - key: PYTHON_VERSION

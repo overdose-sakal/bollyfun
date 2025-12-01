@@ -12,23 +12,7 @@ from movies.models import DownloadToken, Movies, SentFile
 logger = logging.getLogger(__name__)
 
 
-async def delete_message_job(context: ContextTypes.DEFAULT_TYPE):
-    """Job to delete a message after 24 hours"""
-    job_data = context.job.data
-    chat_id = job_data['chat_id']
-    message_id = job_data['message_id']
-    
-    try:
-        await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
-        logger.info(f"🗑️ Deleted message {message_id} after 24 hours")
-        
-        await sync_to_async(SentFile.objects.filter(
-            chat_id=chat_id, 
-            message_id=message_id
-        ).delete)()
-        
-    except Exception as e:
-        logger.error(f"Failed to delete message {message_id}: {e}")
+# ❌ REMOVED: The delete_message_job function (now handled by a Cron Job)
 
 
 async def handle_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -54,7 +38,7 @@ async def handle_start_command(update: Update, context: ContextTypes.DEFAULT_TYP
         await update.message.reply_text("❌ Invalid or expired link.")
         return
     except Exception as e:
-        logger.error(f"❌ Error: {e}")
+        logger.error(f"❌ Error fetching token: {e}")
         await update.message.reply_text("❌ An error occurred.")
         return
 
@@ -93,32 +77,30 @@ async def handle_start_command(update: Update, context: ContextTypes.DEFAULT_TYP
         await processing_msg.delete()
         await update.message.reply_text(
             f"✅ **{quality}** for **{movie_title}** sent!\n\n"
-            f"⏰ Will be deleted in 24 hours.",
+            f"⏰ The server cleanup job is tracking this message for auto-deletion after 24 hours.",
             parse_mode="Markdown"
         )
         
-        # Schedule deletion
-        context.job_queue.run_once(
-            delete_message_job,
-            when=timedelta(hours=24),
-            data={
-                'chat_id': update.effective_chat.id,
-                'message_id': sent_message.message_id
-            }
-        )
+        # ❌ REMOVED: context.job_queue.run_once(...)
         
+        # This database entry is now the sole source of truth for the Cron Job.
         await sync_to_async(SentFile.objects.create)(
             chat_id=update.effective_chat.id,
             message_id=sent_message.message_id,
             movie=movie,
             quality=quality,
-            delete_at=timezone.now() + timedelta(hours=24)
+            delete_at=timezone.now() + timedelta(hours=24) 
         )
         
         await sync_to_async(token.delete)()
-        logger.info("✅ File sent successfully")
+        logger.info("✅ File sent successfully and deletion scheduled via DB record.")
     
     except Exception as e:
-        await processing_msg.delete()
+        # If an error occurs during sending or DB creation, clean up the processing message
+        try:
+            await processing_msg.delete()
+        except:
+            pass # Ignore if it's already gone
+            
         await update.message.reply_text("❌ Error sending file.")
-        logger.error(f"Error: {e}")
+        logger.error(f"Error sending file in handler: {e}")

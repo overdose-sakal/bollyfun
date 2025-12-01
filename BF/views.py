@@ -142,28 +142,34 @@ def download_file_redirect(request, token):
 # BF/views.py (Correction)
 
 # Make sure you have 'import sys' at the top of the file
-import sys
+import sys 
 # ... other imports ...
 
 # ... after the functional views ...
 
 logger = logging.getLogger(__name__)
 
-# New Conditional Logic: Only initialize the bot when running the web server.
-# This prevents the bot from crashing during management commands like 'migrate'
+# --- CONDITIONAL BOT INITIALIZATION (THE STABILITY FIX) ---
+# We check for common management commands to avoid initialization during deploy steps.
 if not any(arg in sys.argv for arg in ['makemigrations', 'migrate', 'collectstatic', 'runserver']):
-    # Create the bot application
-    telegram_app = Application.builder().token(settings.TELEGRAM_BOT_TOKEN).build()
-
-    # Import and register handlers
-    from movies.bot_handlers import handle_start_command
+    
+    # 1. Create the bot application, explicitly telling it NOT to build the Polling Updater.
+    # This prevents the Python 3.13 compatibility crash and is the correct way for a Webhook.
+    telegram_app = Application.builder().token(settings.TELEGRAM_BOT_TOKEN).updater(None).build()
+    
+    # 2. Import and register handlers
+    from movies.bot_handlers import start as handle_start_command # Assuming your handlers are here
+    # You may have other handlers (e.g., MessageHandler, CallbackQueryHandler)
+    
+    # Register handlers
     telegram_app.add_handler(CommandHandler("start", handle_start_command))
+    
+    logger.info("✅ Telegram Application initialized and handlers registered for Webhook.")
+
 else:
-    # During build/migrate, set a placeholder to avoid crashes
+    # Placeholder to ensure Gunicorn starts without errors during the build phase
     telegram_app = None
-    # NOTE: You must ensure 'from movies.bot_handlers import handle_start_command' 
-    # is only executed conditionally if it causes an import crash itself.
-    # Given the original log, only Application.builder().build() is the issue.
+    logger.info("⚠️ Skipping Telegram Application initialization during management command execution.")
 
 @csrf_exempt
 async def telegram_webhook_view(request):
