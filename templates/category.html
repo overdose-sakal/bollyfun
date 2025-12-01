@@ -1,0 +1,205 @@
+{% load static %}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BollyFun - Download Movies & Shows for free!</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="{% static 'index.css' %}">
+<style>
+    
+</style>
+
+
+</head>
+<body class="bg-dark">
+
+
+
+
+
+
+<div id="header">
+
+<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+<!-- Navigation -->
+<div class="fixed-top">
+  <header class="topbar">
+      <div class="container">
+        <div class="row">
+          <!-- social icon-->
+          <!-- <div class="col-sm-12">
+            <ul class="social-network">
+              <li><a class="waves-effect waves-dark" href="#"><i class="fa fa-facebook"></i></a></li>
+              <li><a class="waves-effect waves-dark" href="#"><i class="fa fa-twitter"></i></a></li>
+              <li><a class="waves-effect waves-dark" href="#"><i class="fa fa-linkedin"></i></a></li>
+              <li><a class="waves-effect waves-dark" href="#"><i class="fa fa-pinterest"></i></a></li>
+              <li><a class="waves-effect waves-dark" href="#"><i class="fa fa-google-plus"></i></a></li>
+            </ul>
+          </div> -->
+
+        </div>
+      </div>
+  </header>
+  <nav class="navbar navbar-expand-lg navbar-dark mx-background-top-linear pt-3">
+    <div class="container">
+      <a class="navbar-brand" rel="nofollow" target="_blank" href="#" style="text-transform: uppercase;"> BollyFun </a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarResponsive">
+
+        <ul class="navbar-nav ml-auto">
+
+          <li class="nav-item active">
+            <a class="nav-link" href="{% url "home" %}">Home
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href="/category/movies/">Movies</a>
+          </li>
+
+         <li class="nav-item">
+            <a class="nav-link" href="/category/tv/">TV Shows</a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href="/category/anime/">Anime</a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href="#">Report</a>
+          </li>
+
+          <!-- <li class="nav-item">
+            <a class="nav-link" href="#">Blog</a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href="#">Contact</a>
+          </li> -->
+        </ul>
+      </div>
+    </div>
+  </nav>
+</div>
+</div> <!-- Header Ends -->
+
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-12">
+      <!-- <input type="search" class="form-control rounded" placeholder="Search">
+      <button class="btn btn-success" type="button">Search</button> -->
+
+            <form method="get" class="input-group">
+            <input
+            type="search"
+            class="form-control my-3"
+            name="q"
+            placeholder="Search for anything"
+            value="{{ query }}"
+            />
+            <button class="btn btn-success my-3" type="submit">Search</button>
+        </form>
+
+            </div>
+        </div>
+
+        
+<div class="row gx-2 gy-2">
+{% for movie in movies %}
+<div class="col-6 col-md-4 col-lg-3">
+    <a href="{% url 'movie_detail' slug=movie.slug %}" style="text-decoration: none;">
+        <div class="rounded bg-secondary px-2 pb-3 h-100 d-flex flex-column"
+            style="cursor: pointer; transition: transform 0.2s;">
+            <img class="img-fluid mt-2 rounded" src="{{ movie.dp }}" alt="{{ movie.title }}">
+            <h4 class="text-light mt-2 flex-grow-1">{{ movie.title }}</h4>
+        </div>
+    </a>
+</div>
+{% endfor %}
+</div>
+
+
+    </div>
+
+
+<!--Pagination is down below baby-->
+<div class="container text-center my-3">
+    <p class="text-light">
+        Page {{ movies.number }} of {{ movies.paginator.num_pages }} 
+        ({{ movies.paginator.count }} total items)
+    </p>
+</div>
+
+
+<div class="container d-flex justify-content-center">
+    <div class="row my-2">
+        <nav aria-label="Page navigation example">
+            <ul class="pagination">
+                <!-- Previous Button -->
+                {% if movies.has_previous %}
+                <li class="page-item">
+                    <a style="background-color: gray !important; color: white !important;" 
+                       onmouseover="this.style.backgroundColor='white'; this.style.color='black';" 
+                       onmouseout="this.style.backgroundColor='gray'; this.style.color='white';"
+                       class="page-link" href="?page={{ movies.previous_page_number }}">Previous</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a style="background-color: #555 !important; color: #999 !important; cursor: not-allowed;"
+                       class="page-link" href="#" tabindex="-1">Previous</a>
+                </li>
+                {% endif %}
+
+                <!-- Page Numbers -->
+                {% for num in movies.paginator.page_range %}
+                    {% if movies.number == num %}
+                    <!-- Active/Current Page -->
+                    <li class="page-item active">
+                        <a style="background-color: #54d400 !important; color: white !important; border-color: #54d400;"
+                           class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% elif num > movies.number|add:'-3' and num < movies.number|add:'3' %}
+                    <!-- Pages within range -->
+                    <li class="page-item">
+                        <a style="background-color: gray !important; color: white !important;" 
+                           onmouseover="this.style.backgroundColor='white'; this.style.color='black';" 
+                           onmouseout="this.style.backgroundColor='gray'; this.style.color='white';"
+                           class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- Next Button -->
+                {% if movies.has_next %}
+                <li class="page-item">
+                    <a style="background-color: gray !important; color: white !important;" 
+                       onmouseover="this.style.backgroundColor='white'; this.style.color='black';" 
+                       onmouseout="this.style.backgroundColor='gray'; this.style.color='white';"
+                       class="page-link" href="?page={{ movies.next_page_number }}">Next</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a style="background-color: #555 !important; color: #999 !important; cursor: not-allowed;"
+                       class="page-link" href="#" tabindex="-1">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+
+    
+
+</body>
+</html>

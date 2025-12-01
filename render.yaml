@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: bollyfun
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn BF.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: DJANGO_SETTINGS_MODULE
+        value: BF.settings
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False

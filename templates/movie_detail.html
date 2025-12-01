@@ -1,0 +1,171 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ movie.title }} - BollyFun</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="{% static 'index.css' %}">
+</head>
+<body class="bg-dark">
+
+    <nav class="navbar navbar-expand-lg navbar-dark mx-background-top-linear pt-3">
+        <div class="container">
+            <a class="navbar-brand" href="#" style="text-transform: uppercase;">BollyFun</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url "home" %}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/movies/">Movies</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/tv/">TV Shows</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/anime/">Anime</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Request</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+
+
+    <div class="container mt-5 pt-4">
+
+
+        
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <img src="{{ movie.dp }}" alt="{{ movie.title }}" class="img-fluid rounded shadow-lg">
+                
+                <div class="card bg-secondary mt-3">
+                    <div class="card-body">
+                        <h5 class="card-title text-light">Available Formats</h5>
+                        <div class="d-flex flex-column gap-2">
+                            {% if movie.SD_format %}
+                            <span class="badge bg-success p-2">✓ SD 480p Available</span>
+                            {% else %}
+                            <span class="badge bg-danger p-2">✗ SD 480p Not Available</span>
+                            {% endif %}
+                            
+                            {% if movie.HD_format %}
+                            <span class="badge bg-success p-2">✓ HD 720p Available</span>
+                            {% else %}
+                            <span class="badge bg-danger p-2">✗ HD 720p Not Available</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-secondary mt-3">
+                    <div class="card-body">
+                        <h5 class="card-title text-light">File Information</h5>
+                        <p class="text-light mb-1"><strong>Size:</strong> {{ movie.size_mb }}</p>
+                        <p class="text-light mb-0"><strong>Upload Date:</strong> {{ movie.upload_date|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <h1 class="text-light mb-3">{{ movie.title }}</h1>
+                
+                <div class="card bg-secondary mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-light">Description</h5>
+                        <p class="card-text text-light">
+                            {% if movie.description %}
+                                {{ movie.description|linebreaks }}
+                            {% else %}
+                                No description available.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card bg-secondary mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-light mb-3">Screenshots</h5>
+                        <div class="row g-3">
+                            {% if movie.screenshot1 %}
+                            <div class="col-md-6">
+                                <img src="{{ movie.screenshot1 }}" alt="Screenshot 1" class="img-fluid rounded" style="cursor: pointer;" onclick="openImage('{{ movie.screenshot1 }}')">
+                            </div>
+                            {% endif %}
+                            
+                            {% if movie.screenshot2 %}
+                            <div class="col-md-6">
+                                <img src="{{ movie.screenshot2 }}" alt="Screenshot 2" class="img-fluid rounded" style="cursor: pointer;" onclick="openImage('{{ movie.screenshot2 }}')">
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+<div class="card bg-secondary">
+    <div class="card-body">
+        <h5 class="card-title text-light mb-3">Download Options</h5>
+        <div class="d-flex flex-column flex-md-row gap-3">
+            
+            {% if sd_download_url %}
+            <a href="{{ sd_download_url }}" target="_blank" class="btn btn-success btn-lg flex-fill" 
+               style="background-color: #54d400 !important; border-color: #54d400 !important;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-telegram me-2" viewBox="0 0 16 16">
+                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.286 7.771 10.6 5.342c.118-.118.257-.076.326.046.069.122.012.285-.11.407L8.623 8.243l2.235 2.185c.143.14.072.36-.08.432a.235.235 0 0 1-.362-.058L8.286 9.715 5.923 12.01c-.134.131-.352.091-.424-.037a.36.36 0 0 1 .054-.424l2.235-2.185-2.235-2.185c-.134-.131-.094-.352.037-.424a.36.36 0 0 1 .424.054L8.286 7.771z"/>
+                </svg>
+                Download SD (Get File via Bot)
+            </a>
+            {% endif %}
+            
+            {% if hd_download_url %}
+            <a href="{{ hd_download_url }}" target="_blank" class="btn btn-success btn-lg flex-fill"
+               style="background-color: #54d400 !important; border-color: #54d400 !important;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-telegram me-2" viewBox="0 0 16 16">
+                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.286 7.771 10.6 5.342c.118-.118.257-.076.326.046.069.122.012.285-.11.407L8.623 8.243l2.235 2.185c.143.14.072.36-.08.432a.235.235 0 0 1-.362-.058L8.286 9.715 5.923 12.01c-.134.131-.352.091-.424-.037a.36.36 0 0 1 .054-.424l2.235-2.185-2.235-2.185c-.134-.131-.094-.352.037-.424a.36.36 0 0 1 .424.054L8.286 7.771z"/>
+                </svg>
+                Download HD (Get File via Bot)
+            </a>
+            {% endif %}
+            
+            {% if not sd_download_url and not hd_download_url %}
+            <div class="alert alert-warning" role="alert">
+                Download links are currently unavailable for this movie.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+                <div class="mt-4">
+                    <a href="{% url 'home' %}" class="btn btn-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left me-2" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+                        </svg>
+                        Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openImage(imageUrl) {
+            window.open(imageUrl, '_blank');
+        }
+    </script>
+
+</body>
+</html>
