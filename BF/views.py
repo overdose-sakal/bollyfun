@@ -145,21 +145,18 @@ def download_file_redirect(request, token):
 import sys 
 # ... other imports ...
 
-# ... after the functional views ...
-
 logger = logging.getLogger(__name__)
 
-# --- CONDITIONAL BOT INITIALIZATION (THE STABILITY FIX) ---
-# We check for common management commands to avoid initialization during deploy steps.
-if not any(arg in sys.argv for arg in ['makemigrations', 'migrate', 'collectstatic', 'runserver']):
+# --- CRITICAL BOT INITIALIZATION BLOCK ---
+# We must check against all commands, including the new cleanup_messages script.
+if not any(arg in sys.argv for arg in ['makemigrations', 'migrate', 'collectstatic', 'runserver', 'cleanup_messages']):
     
-    # 1. Create the bot application, explicitly telling it NOT to build the Polling Updater.
-    # This prevents the Python 3.13 compatibility crash and is the correct way for a Webhook.
+    # 👇️ THIS IS THE CRITICAL LINE THAT MUST BE CORRECTED
+    # .updater(None) prevents the creation of the Updater object, fixing the Python 3.13 crash.
     telegram_app = Application.builder().token(settings.TELEGRAM_BOT_TOKEN).updater(None).build()
     
     # 2. Import and register handlers
-    from movies.bot_handlers import start as handle_start_command # Assuming your handlers are here
-    # You may have other handlers (e.g., MessageHandler, CallbackQueryHandler)
+    from movies.bot_handlers import handle_start_command 
     
     # Register handlers
     telegram_app.add_handler(CommandHandler("start", handle_start_command))
@@ -167,7 +164,7 @@ if not any(arg in sys.argv for arg in ['makemigrations', 'migrate', 'collectstat
     logger.info("✅ Telegram Application initialized and handlers registered for Webhook.")
 
 else:
-    # Placeholder to ensure Gunicorn starts without errors during the build phase
+    # This ensures Gunicorn can start without crashing during non-web processes (like collectstatic or a build).
     telegram_app = None
     logger.info("⚠️ Skipping Telegram Application initialization during management command execution.")
 
