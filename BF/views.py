@@ -183,6 +183,13 @@ async def telegram_webhook_view(request):
             # Convert to Telegram Update object
             update = Update.de_json(update_data, telegram_app.bot)
             
+            # --- CRITICAL FIX START ---
+            # Manually initialize the application if it hasn't been initialized yet.
+            # This is required because we used .updater(None).
+            if not telegram_app._initialized:
+                await telegram_app.initialize()
+            # --- CRITICAL FIX END ---
+
             # Process the update
             await telegram_app.process_update(update)
             
