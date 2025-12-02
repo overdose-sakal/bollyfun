@@ -17,19 +17,19 @@ services:
 
 
   - type: cron
-    name: db-cleanup
+    name: message-cleanup
     env: python
-    # We use the same build command as the web service to ensure dependencies are installed
     buildCommand: "./build.sh" 
-    # Command to run the Django management command
-    startCommand: "python manage.py cleanup_db"
-    # Schedule: 0 0 * * * runs at midnight (UTC) daily
-    schedule: "0 0 * * *" 
+    # FIXED: Use the correct command name
+    startCommand: "python manage.py cleanup_messages"
+    # Every hour (to catch messages that expire)
+    schedule: "0 * * * *" 
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
       - key: DJANGO_SETTINGS_MODULE
         value: BF.settings
-      # It's crucial to pass the secret key so the command can access the DB
+      - key: TELEGRAM_BOT_TOKEN
+        value: 8271486898:AAE1knuWpnLoaJBTp-KkIxmqXBniQyVwbOk
       - key: SECRET_KEY
         generateValue: true
