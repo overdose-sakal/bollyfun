@@ -29,21 +29,26 @@ from asgiref.sync import sync_to_async
 logger = logging.getLogger(__name__)
 
 # Simple bot initialization for webhook
+from telegram.ext import Application, CommandHandler
+
 telegram_app = Application.builder().token(settings.TELEGRAM_BOT_TOKEN).build()
 telegram_initialized = False
 
+
 async def initialize_bot():
     global telegram_initialized
+
     if not telegram_initialized:
-        from telegram.ext import CommandHandler
         from movies.bot_handlers import handle_start_command
         
+        # Register /start command
         telegram_app.add_handler(CommandHandler("start", handle_start_command))
 
-        await telegram_app.initialize()  # IMPORTANT
-        telegram_initialized = True
+        # REQUIRED for webhook mode
+        await telegram_app.initialize()
 
-        logger.info("Telegram bot initialized successfully")
+        telegram_initialized = True
+        logger.info("Telegram bot initialized ✔")
 
 
 
@@ -250,19 +255,22 @@ async def telegram_webhook_view(request):
         return HttpResponseForbidden("GET not allowed")
 
     try:
-        # Initialize bot once
+        # Ensure bot is initialized once
         await initialize_bot()
 
         update_data = json.loads(request.body.decode("utf-8"))
         update = Update.de_json(update_data, telegram_app.bot)
 
+        # Process update
         await telegram_app.process_update(update)
 
         return HttpResponse(status=200)
 
     except Exception as e:
-        logger.error(f"Telegram webhook processing failed: {e}")
+        logger.error(f"Telegram webhook error: {e}")
         return HttpResponse(status=500)
+
+
 
 
 
