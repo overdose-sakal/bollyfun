@@ -29,26 +29,27 @@ from asgiref.sync import sync_to_async
 logger = logging.getLogger(__name__)
 
 # Simple bot initialization for webhook
+from telegram import Update
 from telegram.ext import Application, CommandHandler
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 telegram_app = Application.builder().token(settings.TELEGRAM_BOT_TOKEN).build()
-telegram_initialized = False
+initialized = False
 
+async def init_bot():
+    global initialized
+    if initialized:
+        return
+    
+    from movies.bot_handlers import handle_start_command
+    telegram_app.add_handler(CommandHandler("start", handle_start_command))
 
-async def initialize_bot():
-    global telegram_initialized
+    await telegram_app.initialize()   # REQUIRED in webhook mode
 
-    if not telegram_initialized:
-        from movies.bot_handlers import handle_start_command
-        
-        # Register /start command
-        telegram_app.add_handler(CommandHandler("start", handle_start_command))
+    initialized = True
+    print("Telegram bot initialized")
 
-        # REQUIRED for webhook mode
-        await telegram_app.initialize()
-
-        telegram_initialized = True
-        logger.info("Telegram bot initialized ✔")
 
 
 
@@ -253,22 +254,21 @@ def download_page_view(request):
 async def telegram_webhook_view(request):
     if request.method != "POST":
         return HttpResponseForbidden("GET not allowed")
-
+    
     try:
-        # Ensure bot is initialized once
-        await initialize_bot()
+        await init_bot()
 
-        update_data = json.loads(request.body.decode("utf-8"))
-        update = Update.de_json(update_data, telegram_app.bot)
+        update_json = json.loads(request.body.decode("utf-8"))
+        update = Update.de_json(update_json, telegram_app.bot)
 
-        # Process update
         await telegram_app.process_update(update)
 
         return HttpResponse(status=200)
-
+    
     except Exception as e:
-        logger.error(f"Telegram webhook error: {e}")
+        print("Telegram webhook error:", e)
         return HttpResponse(status=500)
+
 
 
 
