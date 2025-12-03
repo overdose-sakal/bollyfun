@@ -210,7 +210,8 @@ def download_file_redirect(request, token):
     # The new final destination page path
     # We pass the movie title and the token via query parameters for the final download page
     # The 'download.html' template handles building the final /start link to the bot
-    final_download_page_url = f"{reverse('download_page')}?token={token_instance.token}&title={quote(token_instance.movie.title)}&quality={token_instance.quality}"
+    final_download_page_url = f"/download.html?token={token_instance.token}&title={quote(token_instance.movie.title)}&quality={token_instance.quality}"
+
 
     return redirect(final_download_page_url)
 
