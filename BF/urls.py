@@ -12,7 +12,8 @@ from .views import (
     Movie, 
     download_token_view, 
     download_file_redirect, 
-    telegram_webhook_view
+    telegram_webhook_view,
+    download_page_view,
 )
 
 # router = DefaultRouter()
@@ -37,6 +38,9 @@ urlpatterns = [
     
     # 2. Token Creation 
     path("download/<str:quality>/<slug:slug>/", download_token_view, name="generate_download_token"),
+
+
+    path("download.html", download_page_view, name="final_download_page"),
 
     # Webhook endpoint
     path("telegram/webhook/", telegram_webhook_view, name="telegram_webhook"),

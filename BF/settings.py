@@ -134,6 +134,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 TELEGRAM_BOT_TOKEN = '8271486898:AAE1knuWpnLoaJBTp-KkIxmqXBniQyVwbOk'
 TELEGRAM_CHANNEL_ID = '-1003396121727'
 TELEGRAM_BOT_USERNAME = 'bollyfun_bot'
+SHRINK_EARN_API_KEY = os.environ.get('SHRINK_API_KEY', '1c444b32ebb82524c41ea5b89ad3b90a52df0a5f')
+SHRINK_API_ENDPOINT = 'https://shrinkearn.com/api'
 
 
 REST_FRAMEWORK = {

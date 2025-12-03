@@ -6,6 +6,8 @@ from django.urls import reverse
 from django.conf import settings
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from urllib.parse import quote  
+import requests # <-- ENSURE THIS IMPORT IS PRESENT
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -19,6 +21,7 @@ import json
 import logging
 from telegram import Update
 from telegram.ext import Application
+
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +42,45 @@ def get_telegram_app():
         logger.info("✅ Telegram app initialized")
     
     return telegram_app
+
+# --- SHRINKURL API CALL FUNCTION (RESTORED) ---
+def shorten_url_shrinkearn(long_url):
+    """
+    Calls the ShrinkEarn API to shorten the URL.
+    Returns the shortened URL or the original URL on failure.
+    """
+    api_key = getattr(settings, 'SHRINK_EARN_API_KEY', None)
+    
+    if not api_key:
+        logger.error("SHRINK_EARN_API_KEY is not set in settings.")
+        return long_url
+    
+    api_url = f"https://shrinkearn.com/api" 
+    
+    params = {
+        'api': api_key,
+        'url': long_url
+    }
+    
+    try:
+        response = requests.get(api_url, params=params, timeout=5)
+        response.raise_for_status() 
+        data = response.json()
+        
+        if data.get('status') == 'success' and 'shortenedUrl' in data:
+            short_url = data['shortenedUrl']
+            logger.info(f"✅ URL shortened successfully: {short_url}")
+            return short_url
+        
+        logger.warning(f"ShrinkEarn API failed or unexpected response structure: {data}")
+        return long_url
+        
+    except requests.exceptions.RequestException as e:
+        logger.error(f"❌ Error communicating with ShrinkEarn API: {e}")
+        return long_url
+    except json.JSONDecodeError:
+        logger.error("❌ ShrinkEarn API returned non-JSON response.")
+        return long_url
 
 
 # --- VIEWS ---
@@ -78,7 +120,20 @@ def Movie(request, slug):
     return render(request, 'movie_detail.html', context)
 
 
+def download_page_view(request):
+    """
+    Renders the final download page template (download.html).
+    This is the secure destination after the ShrinkURL redirect.
+    """
+    return render(request, "download.html")
+
+
+# BF/views.py (Replace the existing download_token_view with this)
+
 def download_token_view(request, quality, slug):
+    """
+    Generates a token, SHORTENS THE DESTINATION URL, and redirects the user to the SHORTENED AD URL.
+    """
     movie = get_object_or_404(Movies, slug=slug)
     quality = quality.upper()
     file_id = None
@@ -90,26 +145,40 @@ def download_token_view(request, quality, slug):
     else:
         return HttpResponseForbidden("Download link is not available for this quality.")
     
-    valid_token_instance = DownloadToken.objects.filter(
+    # 1. Check/Create Download Token
+    token_instance = DownloadToken.objects.filter(
         movie=movie,
         quality=quality,
         expires_at__gt=timezone.now()
     ).first()
 
-    if valid_token_instance:
-        token = valid_token_instance.token
-    else:
+    if not token_instance:
         token_instance = DownloadToken.objects.create(
             movie=movie,
             quality=quality,
             file_id=file_id,
         )
-        token = token_instance.token
 
-    return redirect(reverse('validate_download_token', kwargs={'token': token}))
+    # 2. Construct the full final destination URL using BASE_DOMAIN
+    # This ensures the URL is always public (e.g., https://bollyfun.onrender.com/download/token/UUID/)
+    destination_path = reverse('validate_download_token', kwargs={'token': token_instance.token})
+    
+    # IMPORTANT FIX: Use BASE_DOMAIN from settings
+    destination_url = f"{settings.BASE_DOMAIN}{destination_path}" 
+    
+    # 3. SHORTEN THE URL using the API
+    short_url = shorten_url_shrinkearn(destination_url)
+
+    # 4. Redirect the user to the SHORTENED URL
+    # If the shortening failed, it redirects to the original URL.
+    return redirect(short_url)
 
 
 def download_file_redirect(request, token):
+    """
+    This view validates the token (after the ShrinkURL ad) and 
+    redirects the user to the final template page with parameters.
+    """
     try:
         token_instance = get_object_or_404(DownloadToken, token=token)
     except Http404:
@@ -119,10 +188,27 @@ def download_file_redirect(request, token):
         token_instance.delete()
         return HttpResponseForbidden("Download link has expired. Please go back to the movie page to get a new link.")
     
-    bot_username = settings.TELEGRAM_BOT_USERNAME
-    telegram_redirect_url = f"https://t.me/{bot_username}?start={token}"
+    # 1. Prepare Title (e.g., "Movie Title (SD)")
+    movie_title = f"{token_instance.movie.title} ({token_instance.quality})"
     
-    return redirect(telegram_redirect_url)
+    # 2. Prepare Telegram Link
+    bot_username = settings.TELEGRAM_BOT_USERNAME
+    telegram_token_link = f"https://t.me/{bot_username}?start={token}"
+    
+    # 3. Get the URL for the final template view
+    base_download_page_url = reverse("final_download_page") 
+    
+    # Encode title and the full Telegram link for safe URL passing
+    encoded_title = quote(movie_title)
+    encoded_link = quote(telegram_token_link)
+    
+    final_redirect_url = f"{base_download_page_url}?title={encoded_title}&link={encoded_link}"
+    
+    # Redirect to the template-served HTML page
+    return redirect(final_redirect_url)
+
+
+# ... (rest of the views: telegram_webhook_view, MovieViewSet, category_filter, etc.) ...
 
 
 @csrf_exempt
@@ -210,3 +296,53 @@ def category_filter(request, category):
         "category": category,
         "query": query
     })
+
+# NOTE: Keeping the structure of shorten_url_shrinkearn from your previous upload,
+# but it is no longer called in the token generation flow, matching the desired
+# flow where the final page is the ShrinkURL destination.
+def shorten_url_shrinkearn(long_url):
+    """
+    Calls the ShrinkEarn API to shorten the URL.
+    Returns the shortened URL or the original URL on failure.
+    """
+    api_key = settings.SHRINK_EARN_API_KEY
+    
+    if not api_key:
+        logger.error("SHRINK_EARN_API_KEY is not set in settings.")
+        return long_url
+    
+    # Correct API endpoint format for ShrinkEarn
+    api_url = "https://shrinkearn.com/api"
+    
+    params = {
+        'api': api_key,
+        'url': long_url,
+        'alias': ''  # Optional: custom alias
+    }
+    
+    try:
+        logger.info(f"🔗 Attempting to shorten URL: {long_url}")
+        response = requests.get(api_url, params=params, timeout=10)
+        
+        # Log the response for debugging
+        logger.info(f"ShrinkEarn API Response Status: {response.status_code}")
+        logger.info(f"ShrinkEarn API Response: {response.text}")
+        
+        response.raise_for_status()
+        data = response.json()
+        
+        # Check for successful response
+        if data.get('status') == 'success' and data.get('shortenedUrl'):
+            short_url = data['shortenedUrl']
+            logger.info(f"✅ URL shortened successfully: {short_url}")
+            return short_url
+        else:
+            logger.warning(f"❌ ShrinkEarn API failed: {data}")
+            return long_url
+        
+    except requests.exceptions.RequestException as e:
+        logger.error(f"❌ Error communicating with ShrinkEarn API: {e}")
+        return long_url
+    except json.JSONDecodeError as e:
+        logger.error(f"❌ ShrinkEarn API returned non-JSON response: {e}")
+        return long_url
