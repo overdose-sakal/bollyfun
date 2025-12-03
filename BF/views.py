@@ -25,55 +25,27 @@ import logging
 from telegram import Update
 from telegram.ext import Application
 from asgiref.sync import sync_to_async
+
 logger = logging.getLogger(__name__)
 
 # Simple bot initialization for webhook
-
-telegram_app = None # Use a local global variable for this file/worker
+telegram_app = None
 
 def get_telegram_app():
-    """Lazy initialization of telegram app for each worker/process."""
+    """Lazy initialization of telegram app"""
     global telegram_app
     if telegram_app is None:
-        try:
-            # 1. Build the application
-            telegram_app = Application.builder().token(settings.TELEGRAM_BOT_TOKEN).updater(None).build()
-            
-            # 2. Add handlers
-            from telegram.ext import CommandHandler
-            from movies.bot_handlers import handle_start_command
-            telegram_app.add_handler(CommandHandler("start", handle_start_command))
-            
-            logger.info("✅ Telegram app initialized locally for webhook worker")
-        except Exception as e:
-            logger.critical(f"❌ Critical error initializing Telegram Application locally: {e}")
-            raise RuntimeError("Telegram Application initialization failed.")
+        # NOTE: Using getattr here is also safer, but assuming settings.TELEGRAM_BOT_TOKEN is present
+        telegram_app = Application.builder().token(settings.TELEGRAM_BOT_TOKEN).updater(None).build()
+        
+        # Import and register handlers
+        from telegram.ext import CommandHandler
+        from movies.bot_handlers import handle_start_command
+        telegram_app.add_handler(CommandHandler("start", handle_start_command))
+        
+        logger.info("✅ Telegram app initialized")
     
     return telegram_app
-
-@csrf_exempt
-async def telegram_webhook_view(request):
-    if request.method == "POST":
-        try:
-            update_data = json.loads(request.body.decode("utf-8"))
-            
-            # Use the local, lazily initialized app
-            app = get_telegram_app() 
-            
-            # Use the local app instance
-            update = Update.de_json(update_data, app.bot) 
-
-            # Process the update
-            await app.process_update(update) 
-
-            return HttpResponse(status=200)
-
-        except Exception as e:
-            logger.error(f"Error processing Telegram webhook: {e}")
-            return HttpResponse(status=500)
-
-    return HttpResponseForbidden('GET requests are not allowed')
-
 
 
 # --- SHRINKURL API CALL FUNCTION (ROBUST) ---
@@ -275,20 +247,23 @@ def download_page_view(request):
 
 @csrf_exempt
 async def telegram_webhook_view(request):
+    """
+    Handles incoming Telegram updates via webhook.
+    """
     if request.method == "POST":
         try:
             update_data = json.loads(request.body.decode("utf-8"))
-            # Use the global telegram_app imported from asgi.py
-            update = Update.de_json(update_data, telegram_app.bot) 
-
-            await telegram_app.process_update(update) # Use the global app
-
+            update = Update.de_json(update_data, get_telegram_app().bot)
+            
+            # Process the update asynchronously
+            await get_telegram_app().process_update(update)
+            
             return HttpResponse(status=200)
 
         except Exception as e:
             logger.error(f"Error processing Telegram webhook: {e}")
             return HttpResponse(status=500)
-
+    
     return HttpResponseForbidden('GET requests are not allowed')
 
 
