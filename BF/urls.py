@@ -34,10 +34,14 @@ urlpatterns = [
     # --- TEMPORARY LINK SYSTEM PATHS (ORDER IS CRUCIAL) ---
     
     # 1. Token Validation (MUST be first)
-    path("download/token/<uuid:token>/", download_file_redirect, name="validate_download_token"),
-    
-    # 2. Token Creation 
-    path("download/<str:quality>/<slug:slug>/", download_token_view, name="download_token"),
+# After ShrinkEarn finishes → validate token → redirect to download.html
+path("download/token/<uuid:token>/", download_file_redirect, name="download_file_redirect"),
+
+# When user clicks download on movie_detail.html → generate token → ShrinkEarn
+path("download/<str:quality>/<slug:slug>/", download_token_view, name="download_token"),
+
+# Final destination (your Vue download.html page)
+path("download.html", download_page_view, name="download_page"),
 
     path("dl/<uuid:token>/", download_file_redirect, name="download_file_redirect"),
 
