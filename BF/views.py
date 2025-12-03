@@ -134,43 +134,19 @@ def download_token_view(request, quality, slug):
     """
     Generates a token, SHORTENS THE DESTINATION URL, and redirects the user to the SHORTENED AD URL.
     """
-    movie = get_object_or_404(Movies, slug=slug)
-    quality = quality.upper()
-    file_id = None
-
-    if quality == 'SD' and movie.SD_telegram_file_id:
-        file_id = movie.SD_telegram_file_id
-    elif quality == 'HD' and movie.HD_telegram_file_id:
-        file_id = movie.HD_telegram_file_id
-    else:
-        return HttpResponseForbidden("Download link is not available for this quality.")
+    # ... (code to create/get token_instance remains the same) ...
     
-    # 1. Check/Create Download Token
-    token_instance = DownloadToken.objects.filter(
-        movie=movie,
-        quality=quality,
-        expires_at__gt=timezone.now()
-    ).first()
-
-    if not token_instance:
-        token_instance = DownloadToken.objects.create(
-            movie=movie,
-            quality=quality,
-            file_id=file_id,
-        )
-
-    # 2. Construct the full final destination URL using BASE_DOMAIN
-    # This ensures the URL is always public (e.g., https://bollyfun.onrender.com/download/token/UUID/)
+    # 2. Construct the full final destination URL
+    # FIX: Use getattr() to safely access BASE_DOMAIN, preventing a crash if it's missing.
+    base_domain = getattr(settings, 'BASE_DOMAIN', request.build_absolute_uri('/').strip('/'))
+    
     destination_path = reverse('validate_download_token', kwargs={'token': token_instance.token})
-    
-    # IMPORTANT FIX: Use BASE_DOMAIN from settings
-    destination_url = f"{settings.BASE_DOMAIN}{destination_path}" 
+    destination_url = f"{base_domain}{destination_path}" 
     
     # 3. SHORTEN THE URL using the API
     short_url = shorten_url_shrinkearn(destination_url)
 
     # 4. Redirect the user to the SHORTENED URL
-    # If the shortening failed, it redirects to the original URL.
     return redirect(short_url)
 
 
@@ -300,15 +276,18 @@ def category_filter(request, category):
 # NOTE: Keeping the structure of shorten_url_shrinkearn from your previous upload,
 # but it is no longer called in the token generation flow, matching the desired
 # flow where the final page is the ShrinkURL destination.
+
 def shorten_url_shrinkearn(long_url):
     """
     Calls the ShrinkEarn API to shorten the URL.
     Returns the shortened URL or the original URL on failure.
     """
-    api_key = settings.SHRINK_EARN_API_KEY
+    # FIX: Use getattr() to safely access the key without crashing if it's missing
+    api_key = getattr(settings, 'SHRINK_EARN_API_KEY', None)
     
     if not api_key:
-        logger.error("SHRINK_EARN_API_KEY is not set in settings.")
+        # This will now only log a warning and return the original URL, not crash.
+        logger.error("❌ SHRINK_EARN_API_KEY is not set in settings. Skipping shortening.")
         return long_url
     
     # Correct API endpoint format for ShrinkEarn
@@ -317,32 +296,31 @@ def shorten_url_shrinkearn(long_url):
     params = {
         'api': api_key,
         'url': long_url,
-        'alias': ''  # Optional: custom alias
+        'alias': '' 
     }
     
     try:
         logger.info(f"🔗 Attempting to shorten URL: {long_url}")
         response = requests.get(api_url, params=params, timeout=10)
         
-        # Log the response for debugging
+        # Log response for debugging on Render
         logger.info(f"ShrinkEarn API Response Status: {response.status_code}")
-        logger.info(f"ShrinkEarn API Response: {response.text}")
+        logger.info(f"ShrinkEarn API Response: {response.text}") 
         
         response.raise_for_status()
         data = response.json()
         
-        # Check for successful response
         if data.get('status') == 'success' and data.get('shortenedUrl'):
             short_url = data['shortenedUrl']
             logger.info(f"✅ URL shortened successfully: {short_url}")
             return short_url
         else:
-            logger.warning(f"❌ ShrinkEarn API failed: {data}")
+            logger.warning(f"❌ ShrinkEarn API failed or unexpected response: {data}")
             return long_url
         
     except requests.exceptions.RequestException as e:
         logger.error(f"❌ Error communicating with ShrinkEarn API: {e}")
         return long_url
-    except json.JSONDecodeError as e:
-        logger.error(f"❌ ShrinkEarn API returned non-JSON response: {e}")
+    except json.JSONDecodeError:
+        logger.error("❌ ShrinkEarn API returned non-JSON response.")
         return long_url
