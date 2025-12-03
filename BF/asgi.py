@@ -6,12 +6,15 @@ from django.conf import settings
 
 # Telegram Imports
 import logging
-from telegram.ext import Application, CommandHandler
-from movies.bot_handlers import handle_start_command # Import your handler
+
 
 # Set up Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'BF.settings')
 django_asgi_app = get_asgi_application()
+from movies.bot_handlers import handle_start_command
+
+import logging
+from telegram.ext import Application, CommandHandler
 
 # --- TELEGRAM BOT INITIALIZATION ---
 logger = logging.getLogger(__name__)
