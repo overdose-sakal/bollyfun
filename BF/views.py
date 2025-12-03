@@ -180,14 +180,12 @@ def download_token_view(request, quality, slug):
     # Safely retrieve the bot username
     bot_username = getattr(settings, 'TELEGRAM_BOT_USERNAME', 'YourBotUsername_placeholder') 
     
-    # The final destination URL (after the user clicks the ShrinkEarn ad)
-    telegram_url = f"https://t.me/{bot_username}?start={token_instance.token}" 
-    
-    # 4. SHORTEN THE URL using ShrinkEarn
-    short_url = shorten_url_shrinkearn(telegram_url)
+    # This URL goes to your token validation view
+    redirect_back_url = f"{settings.BASE_DOMAIN}/dl/{token_instance.token}/"
 
-    # 5. Redirect the user to the SHORTENED URL
-    # If shortening failed, short_url is the original telegram_url
+    # ShrinkEarn will point to this
+    short_url = shorten_url_shrinkearn(redirect_back_url)
+
     return redirect(short_url)
 
 
@@ -210,10 +208,11 @@ def download_file_redirect(request, token):
     # The new final destination page path
     # We pass the movie title and the token via query parameters for the final download page
     # The 'download.html' template handles building the final /start link to the bot
-    final_download_page_url = f"/download.html?token={token_instance.token}&title={quote(token_instance.movie.title)}&quality={token_instance.quality}"
+    # final_download_page_url = f"/download.html?token={token_instance.token}&title={quote(token_instance.movie.title)}&quality={token_instance.quality}"
 
 
-    return redirect(final_download_page_url)
+    return redirect(f"/download.html?token={token_instance.token}&title={quote(token_instance.movie.title)}&quality={token_instance.quality}")
+
 
 
 def download_page_view(request):
