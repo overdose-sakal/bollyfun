@@ -20,34 +20,24 @@ from .views import (
 # router.register("movies", MovieViewSet, basename="movies")
 
 urlpatterns = [
-    # API Router path
-    # NOTE: You previously had path("", include(router.urls)), which is generally bad
-    # as it conflicts with the Home view. Using 'api/' prefix instead:
+    # API
     path("movies/", include("movies.urls")),
 
-    # Functional View paths (for the website pages)
+    # Website pages
     path("", Home, name="home"), 
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
     path("movie/<slug:slug>/", Movie, name="movie_detail"), 
     path("category/<str:category>/", views.category_filter, name="category_filter"),
 
-    # --- TEMPORARY LINK SYSTEM PATHS (ORDER IS CRUCIAL) ---
-    
-    # 1. Token Validation (MUST be first)
-# After ShrinkEarn finishes → validate token → redirect to download.html
-path("download/token/<uuid:token>/", download_file_redirect, name="download_file_redirect"),
-
-# When user clicks download on movie_detail.html → generate token → ShrinkEarn
-path("download/<str:quality>/<slug:slug>/", download_token_view, name="download_token"),
-
-# Final destination (your Vue download.html page)
-path("download.html", download_page_view, name="download_page"),
-
+    # ShrinkEarn → TOKEN VALIDATION
     path("dl/<uuid:token>/", download_file_redirect, name="download_file_redirect"),
 
+    # User clicked Download → Generate ShrinkEarn link
+    path("download/<str:quality>/<slug:slug>/", download_token_view, name="download_token"),
 
-    path("download-page/", download_page_view, name="download_page"),
+    # Final destination → download.html
+    path("download.html", download_page_view, name="download_page"),
 
-    # Webhook endpoint
+    # Telegram webhook
     path("telegram/webhook/", telegram_webhook_view, name="telegram_webhook"),
 ]
