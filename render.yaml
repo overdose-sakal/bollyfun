@@ -3,32 +3,38 @@ services:
     name: bollyfun
     env: python
     buildCommand: "./build.sh"
-    # UPDATED: Use the new configuration file
-    startCommand: "gunicorn BF.wsgi:application"
+    startCommand: "gunicorn --config gunicorn.conf.py BF.wsgi:application"
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
       - key: DJANGO_SETTINGS_MODULE
         value: BF.settings
+      - key: DATABASE_URL
+        sync: false  # Add your Neon database URL in Render dashboard
+      - key: SITE_URL
+        value: https://bollyfun.onrender.com
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
         value: False
-
+      - key: TELEGRAM_BOT_TOKEN
+        value: 8271486898:AAE1knuWpnLoaJBTp-KkIxmqXBniQyVwbOk
+      - key: SHRINK_EARN_API_KEY
+        value: 1c444b32ebb82524c41ea5b89ad3b90a52df0a5f
 
   - type: cron
     name: message-cleanup
     env: python
     buildCommand: "./build.sh" 
-    # FIXED: Use the correct command name
     startCommand: "python manage.py cleanup_messages"
-    # Every hour (to catch messages that expire)
     schedule: "0 * * * *" 
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
       - key: DJANGO_SETTINGS_MODULE
         value: BF.settings
+      - key: DATABASE_URL
+        sync: false
       - key: TELEGRAM_BOT_TOKEN
         value: 8271486898:AAE1knuWpnLoaJBTp-KkIxmqXBniQyVwbOk
       - key: SECRET_KEY
