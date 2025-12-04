@@ -16,6 +16,11 @@ from .views import (
     download_page_view,
 )
 
+from django.http import HttpResponse
+
+def health(request):
+    return HttpResponse("OK", status=200)
+
 # router = DefaultRouter()
 # router.register("movies", MovieViewSet, basename="movies")
 
@@ -40,4 +45,6 @@ urlpatterns = [
 
     # Telegram webhook
     path("telegram/webhook/", telegram_webhook_view, name="telegram_webhook"),
+
+    path("health/", health),
 ]
