@@ -51,58 +51,6 @@ async def init_bot():
     print("Telegram bot initialized")
 
 
-
-
-# --- SHRINKURL API CALL FUNCTION (ROBUST) ---
-def shorten_url_shrinkearn(long_url):
-    """
-    Calls the ShrinkEarn API to shorten the URL.
-    Returns the shortened URL or the original URL on failure.
-    """
-    # 1. Safely retrieve API key to prevent 500 error if it's missing
-    api_key = getattr(settings, 'SHRINK_EARN_API_KEY', None)
-    
-    if not api_key:
-        logger.error("❌ SHRINK_EARN_API_KEY is not set in settings. Skipping shortening.")
-        return long_url
-    
-    # Correct API endpoint format for ShrinkEarn
-    api_url = "https://shrinkearn.com/api"
-    
-    params = {
-        'api': api_key,
-        'url': long_url,
-        'alias': '' 
-    }
-    
-    try:
-        logger.info(f"🔗 Attempting to shorten URL: {long_url}")
-        response = requests.get(api_url, params=params, timeout=10)
-        
-        # Log response for debugging on Render
-        logger.info(f"ShrinkEarn API Response Status: {response.status_code}")
-        logger.info(f"ShrinkEarn API Response: {response.text}") 
-        
-        response.raise_for_status() # Raises an exception for HTTP error codes
-        data = response.json()
-        
-        if data.get('status') == 'success' and data.get('shortenedUrl'):
-            short_url = data['shortenedUrl']
-            logger.info(f"✅ URL shortened successfully: {short_url}")
-            return short_url
-        else:
-            # This handles API errors (e.g., bad API key)
-            logger.warning(f"❌ ShrinkEarn API failed or unexpected response: {data}")
-            return long_url
-        
-    except requests.exceptions.RequestException as e:
-        logger.error(f"❌ Error communicating with ShrinkEarn API: {e}")
-        return long_url
-    except json.JSONDecodeError:
-        logger.error("❌ ShrinkEarn API returned non-JSON response.")
-        return long_url
-
-
 # --- CORE VIEWS ---
 
 def Home(request):
@@ -154,12 +102,12 @@ def category_filter(request, category):
     })
 
 
-# --- DOWNLOAD TOKEN VIEWS ---
+# --- DOWNLOAD TOKEN VIEWS (UPDATED FOR BLOG REDIRECTION) ---
 
 def download_token_view(request, quality, slug):
     """
-    Generates a token, shortens the Telegram deep link, and redirects the user
-    to the SHORTENED AD URL.
+    Generates a token and redirects user to TechHawk blog for monetization.
+    User will go through 2 blog pages before getting the file.
     """
     movie = get_object_or_404(Movies, slug=slug)
     quality = quality.upper()
@@ -181,60 +129,60 @@ def download_token_view(request, quality, slug):
         file_id=file_id,
     )
 
-    # 3. Construct the Telegram deep link (the link to be monetized)
-    # Safely retrieve the bot username
-    bot_username = getattr(settings, 'TELEGRAM_BOT_USERNAME', 'YourBotUsername_placeholder') 
+    # 3. Redirect to TechHawk Blog Page 1 with token parameters
+    # The blog will handle the countdown and show ads
+    techhawk_url = (
+        f"https://techhawk.netlify.app/ad-page-1?"
+        f"token={token_instance.token}&"
+        f"title={quote(movie.title)}&"
+        f"quality={quality}"
+    )
     
-    # This URL goes to your token validation view
-    redirect_back_url = f"{settings.BASE_DOMAIN}/dl/{token_instance.token}/"
-
-    # ShrinkEarn will point to this
-    short_url = shorten_url_shrinkearn(redirect_back_url)
-
-    return redirect(short_url)
+    logger.info(f"✅ Redirecting to TechHawk: {techhawk_url}")
+    return redirect(techhawk_url)
 
 
 def download_file_redirect(request, token):
     """
-    Called after the user completes the ShrinkEarn ad.
+    Called after the user completes BOTH blog pages.
     It verifies the token and redirects the user to the file-ready page.
     """
     try:
         token_instance = get_object_or_404(DownloadToken, token=token)
     except Http404:
-        # Handle case where token is invalid or expired (Django will auto-return 404)
-        return render(request, 'download_error.html', {'error_message': 'Invalid or expired download link. Please get a new link from the movie page.'}, status=410)
+        return render(request, 'download_error.html', {
+            'error_message': 'Invalid or expired download link. Please get a new link from the movie page.'
+        }, status=410)
 
     # Check if the token is still valid (not expired)
     if not token_instance.is_valid():
-        token_instance.delete() # Clean up expired token
-        return render(request, 'download_error.html', {'error_message': 'Your download link has expired. Please get a new link from the movie page.'}, status=410)
+        token_instance.delete()
+        return render(request, 'download_error.html', {
+            'error_message': 'Your download link has expired. Please get a new link from the movie page.'
+        }, status=410)
     
-    # The new final destination page path
-    # We pass the movie title and the token via query parameters for the final download page
-    # The 'download.html' template handles building the final /start link to the bot
-    # final_download_page_url = f"/download.html?token={token_instance.token}&title={quote(token_instance.movie.title)}&quality={token_instance.quality}"
-
-
-    return redirect(f"/download.html?token={token_instance.token}&title={quote(token_instance.movie.title)}&quality={token_instance.quality}")
-
+    # Redirect to final download page with Telegram deep link
+    return redirect(
+        f"/download.html?token={token_instance.token}&"
+        f"title={quote(token_instance.movie.title)}&"
+        f"quality={token_instance.quality}"
+    )
 
 
 def download_page_view(request):
     """
     Renders the final download page (download.html).
-    The Vue app in the template handles building the final Telegram deep link.
+    This shows the Telegram deep link after ad pages are completed.
     """
-    # The token and movie title are passed as query params
     token = request.GET.get('token')
     movie_title = request.GET.get('title')
     quality = request.GET.get('quality')
     
     if not token or not movie_title or not quality:
-        # Should not happen if previous view worked, but safety first
-        return render(request, 'download_error.html', {'error_message': 'Missing download parameters.'}, status=400)
+        return render(request, 'download_error.html', {
+            'error_message': 'Missing download parameters.'
+        }, status=400)
     
-    # Safely retrieve the bot username
     bot_username = getattr(settings, 'TELEGRAM_BOT_USERNAME', 'YourBotUsername_placeholder')
     
     context = {
@@ -270,28 +218,22 @@ async def telegram_webhook_view(request):
         return HttpResponse(status=500)
 
 
-
-
-
-
 # --- REST API VIEWS ---
 
 class MovieViewSet(viewsets.ModelViewSet):
     queryset = Movies.objects.all().order_by('-upload_date')
     serializer_class = MovieSerializer
     
-    # OPTIONAL: You can add custom actions here if needed
     @action(detail=False, methods=['get'], url_path='search')
     def search_movies(self, request):
         query = request.query_params.get('q', '')
         if query:
             queryset = self.queryset.filter(title__icontains=query)
         else:
-            queryset = self.queryset.none() # Return empty if no query
+            queryset = self.queryset.none()
             
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-
 
 
 import telegram
