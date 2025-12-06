@@ -132,7 +132,7 @@ def download_token_view(request, quality, slug):
     # 3. Redirect to TechHawk Blog Page 1 with token parameters
     # The blog will handle the countdown and show ads
     techhawk_url = (
-        f"https://techhawk.netlify.app/ad-page-1?"
+        f"https://techhawk.pages.dev/ad-page-1?"
         f"token={token_instance.token}&"
         f"title={quote(movie.title)}&"
         f"quality={quality}"
