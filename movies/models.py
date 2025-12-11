@@ -30,6 +30,7 @@ class Movies(models.Model):
     dp = models.URLField(max_length=500, null=False, blank=False) #display picture
     screenshot1 = models.URLField(max_length=500)
     screenshot2 = models.URLField(max_length=500)
+    trailer = models.URLField(max_length=500, blank=True, null=True) # NEW: Field for movie trailer URL
     created_at = models.DateField(auto_now_add=True)
 
 

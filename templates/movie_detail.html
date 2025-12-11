@@ -3,41 +3,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script
-  type="text/javascript"
-  src="//pl28220970.effectivegatecpm.com/2c/e2/8a/2ce28ae76873046b1947c80e35b6aa86.js"
-></script>
+    <script type="text/javascript" src="//pl28220970.effectivegatecpm.com/2c/e2/8a/2ce28ae76873046b1947c80e35b6aa86.js"></script>
     <script>(function(s){s.dataset.zone='10296011',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
     <script>(function(s){s.dataset.zone='10296027',s.src='https://groleegni.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-<link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ movie.title }} - BollyFun</title>
+    <title>{{ movie.title }} - {{ SITE_NAME }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="{% static 'index.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'index.css' %}">
+    <style>
+        /* Dynamic site color based on current domain */
+        .btn-download {
+            background-color: {{ SITE_PRIMARY_COLOR }} !important;
+            border-color: {{ SITE_PRIMARY_COLOR }} !important;
+        }
+        .btn-download:hover {
+            opacity: 0.9;
+        }
+    </style>
 </head>
 <body class="bg-dark">
 
     <nav class="navbar navbar-expand-lg navbar-dark mx-background-top-linear py-1">
         <div class="container">
-<a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
-    <img src="{% static 'images/bf_logo.png' %}" 
-         alt="BollyFun Logo"
-         class="img-fluid"
-         style="height: 35px; width: auto; margin-right: 5px;">
-    <span style="font-family: 'Georgia', serif; font-size: 1.5rem; text-transform: uppercase; color: black;">BollyFun</span>
-</a>
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
+                <img src="{% static SITE_LOGO %}" 
+                     alt="{{ SITE_NAME }} Logo"
+                     class="img-fluid"
+                     style="height: 35px; width: auto; margin-right: 5px;">
+                <span style="font-family: 'Georgia', serif; font-size: 1.5rem; text-transform: uppercase; color: black;">{{ SITE_NAME }}</span>
+            </a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarResponsive">
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url "home" %}">Home</a>
+                        <a class="nav-link" href="{% url 'home' %}">Home</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/category/movies/">Movies</a>
@@ -56,12 +62,7 @@
         </div>
     </nav>
 
-
-
     <div class="container mt-5 pt-4">
-
-
-        
         <div class="row">
             <div class="col-md-4 mb-4">
                 <img src="{{ movie.dp }}" alt="{{ movie.title }}" class="img-fluid rounded shadow-lg">
@@ -71,13 +72,13 @@
                         <h5 class="card-title text-light">Available Formats</h5>
                         <div class="d-flex flex-column gap-2">
                             {% if movie.SD_format %}
-                            <span class="badge bg-success p-2">✓ SD 480p Available</span>
+                            <span class="badge bg-success p-2">✔ SD 480p Available</span>
                             {% else %}
                             <span class="badge bg-danger p-2">✗ SD 480p Not Available</span>
                             {% endif %}
                             
                             {% if movie.HD_format %}
-                            <span class="badge bg-success p-2">✓ HD 720p Available</span>
+                            <span class="badge bg-success p-2">✔ HD 720p Available</span>
                             {% else %}
                             <span class="badge bg-danger p-2">✗ HD 720p Not Available</span>
                             {% endif %}
@@ -129,44 +130,42 @@
                     </div>
                 </div>
 
-<div class="card bg-secondary">
-    <div class="card-body">
-        <h5 class="card-title text-light mb-3">Download Options</h5>
-        <div class="d-flex flex-column flex-md-row gap-3">
-            
-            {% if movie.SD_telegram_file_id or movie.SD_link %}
-            <a href="{% url 'download_token' 'SD' movie.slug %}" class="btn btn-success btn-lg flex-fill" 
-               style="background-color: #00c9d4ff !important; border-color: #00c9d4ff !important;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-download me-2" viewBox="0 0 16 16">
-                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-                </svg>
-                Download 480p
-            </a>
-            {% endif %}
-            
-            {% if movie.HD_telegram_file_id or movie.HD_link %}
-            <a href="{% url 'download_token' 'HD' movie.slug %}" class="btn btn-success btn-lg flex-fill"
-               style="background-color: #00c9d4ff !important; border-color: #00c9d4ff !important;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-download me-2" viewBox="0 0 16 16">
-                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-                </svg>
-                Download 720p
-            </a>
-            {% endif %}
-            
-            {% if not movie.SD_telegram_file_id and not movie.SD_link and not movie.HD_telegram_file_id and not movie.HD_link %}
-            <div class="alert alert-warning" role="alert">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle-fill me-2" viewBox="0 0 16 16">
-                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-                </svg>
-                Download links are currently unavailable for this movie.
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
+                <div class="card bg-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title text-light mb-3">Download Options</h5>
+                        <div class="d-flex flex-column flex-md-row gap-3">
+                            
+                            {% if movie.SD_telegram_file_id or movie.SD_link %}
+                            <a href="{% url 'download_token' 'SD' movie.slug %}" class="btn btn-success btn-lg flex-fill btn-download">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-download me-2" viewBox="0 0 16 16">
+                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                                </svg>
+                                Download 480p
+                            </a>
+                            {% endif %}
+                            
+                            {% if movie.HD_telegram_file_id or movie.HD_link %}
+                            <a href="{% url 'download_token' 'HD' movie.slug %}" class="btn btn-success btn-lg flex-fill btn-download">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-download me-2" viewBox="0 0 16 16">
+                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                                </svg>
+                                Download 720p
+                            </a>
+                            {% endif %}
+                            
+                            {% if not movie.SD_telegram_file_id and not movie.SD_link and not movie.HD_telegram_file_id and not movie.HD_link %}
+                            <div class="alert alert-warning" role="alert">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle-fill me-2" viewBox="0 0 16 16">
+                                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                                </svg>
+                                Download links are currently unavailable for this movie.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
 
                 <div class="mt-4">
                     <a href="{% url 'home' %}" class="btn btn-secondary">

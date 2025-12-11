@@ -1,4 +1,5 @@
 services:
+  # BollyFun - Primary Domain
   - type: web
     name: bollyfun
     env: python
@@ -13,15 +14,48 @@ services:
         sync: false  # Add your Neon database URL in Render dashboard
       - key: SITE_URL
         value: https://bollyfun.onrender.com
+      - key: BOLLYFUN_DOMAIN
+        value: https://bollyfun.onrender.com
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
         value: False
       - key: TELEGRAM_BOT_TOKEN
         value: 8271486898:AAE1knuWpnLoaJBTp-KkIxmqXBniQyVwbOk
-      - key: SHRINK_EARN_API_KEY
-        value: 1c444b32ebb82524c41ea5b89ad3b90a52df0a5f
+      - key: TELEGRAM_BOT_USERNAME
+        value: bollyfun_bot
+      - key: TELEGRAM_CHANNEL_ID
+        value: -1003396121727
 
+  # ArthurFlix - Backup Domain
+  - type: web
+    name: arthurflix
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn --config gunicorn.conf.py BF.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: DJANGO_SETTINGS_MODULE
+        value: BF.settings
+      - key: DATABASE_URL
+        sync: false  # Use SAME database as BollyFun (same DATABASE_URL)
+      - key: SITE_URL
+        value: https://arthurflix.onrender.com
+      - key: ARTHURFLIX_DOMAIN
+        value: https://arthurflix.onrender.com
+      - key: SECRET_KEY
+        sync: false  # Use same SECRET_KEY as BollyFun
+      - key: DEBUG
+        value: False
+      - key: TELEGRAM_BOT_TOKEN
+        value: 8271486898:AAE1knuWpnLoaJBTp-KkIxmqXBniQyVwbOk
+      - key: TELEGRAM_BOT_USERNAME
+        value: bollyfun_bot
+      - key: TELEGRAM_CHANNEL_ID
+        value: -1003396121727
+
+  # Message Cleanup Cron Job (runs once per hour)
   - type: cron
     name: message-cleanup
     env: python

@@ -15,7 +15,8 @@ class MovieSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'description', 'upload_date', 'size_mb',
             'SD_format', 'HD_format', 'dp', 'screenshot1', 'screenshot2',
-            'slug', 'sd_download_url', 'hd_download_url' # Renamed field
+            'trailer', # ADDED: New field included in API response
+            'slug', 'sd_download_url', 'hd_download_url' 
         ]
     
     def _generate_token_url(self, obj, file_id, quality):
